@@ -42,8 +42,38 @@ function icon(name, size = 18) {
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 }
 
+/* ------------------------------------------------------- shell components */
+function brandMarkup(size = 19) {
+  return `<div class="brand"><span class="brand-mark">${icon('checkSquare', size)}</span><span class="brand-name">Git<span>Tasks</span></span></div>`;
+}
+
+function toolBtn(action, ic, title, cls = '') {
+  return `<button class="tool-btn ${cls}" data-action="${action}" title="${title}" aria-label="${title}">${icon(ic, 18)}</button>`;
+}
+
+function headerMarkup({ crumb = '', tools = '' } = {}) {
+  const avatar = state.user?.avatar ? `<img src="${esc(state.user.avatar)}" alt="">` : '';
+  const login = esc(state.user?.login || '');
+  return `<header class="app-header">
+    <div class="header-inner">
+      <div class="header-left">
+        ${brandMarkup()}
+        ${crumb ? `<span class="header-sep"></span><div class="breadcrumb">${crumb}</div>` : ''}
+      </div>
+      <div class="header-right">
+        <div class="header-tools">${tools}</div>
+        <div class="header-user">${avatar}<span>${login}</span></div>
+      </div>
+    </div>
+  </header>`;
+}
+
+function themeTool() {
+  return toolBtn('theme', document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 'Toggle theme');
+}
+
 /* --------------------------------------------------------------- helpers */
-const APP_VERSION = '6';
+const APP_VERSION = '7';
 const LS_REPO = 'gittasks-repo';
 
 const app = document.getElementById('app');
@@ -236,7 +266,10 @@ async function doOpenRepo(fullName) {
   state.repo = repo;
   state.lists = [];
   state.activePath = null;
-  app.innerHTML = `<div class="app-shell"><header class="topbar"><div class="topbar-left brand">${icon('checkSquare', 24)} GitTasks</div></header><div class="loading-row">${icon('spinner', 18)} Loading lists from <strong>&nbsp;${esc(fullName)}</strong>…</div></div>`;
+  app.innerHTML = `<div class="app-shell board-shell">
+    ${headerMarkup({ crumb: `<span class="crumb-slash">/</span><span class="crumb-repo">${esc(fullName)}</span>` })}
+    <div class="board-body"><main class="board-main"><div class="board-inner"><div class="loading-row">${icon('spinner', 18)} Loading lists from <strong>&nbsp;${esc(fullName)}</strong>…</div></div></main></div>
+  </div>`;
   try {
     await loadLists(repo);
     // Use the repository's own .md files as lists. Never invent a General.md —
@@ -369,7 +402,7 @@ function showConfirm({ title, text, confirmText = 'Confirm', danger = false }) {
           <p class="confirm-text">${esc(text)}</p>
           <div class="modal-foot" style="margin-top:22px">
             <button class="btn btn-secondary" data-action="confirm-no">Cancel</button>
-            <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-action="confirm-yes">${esc(confirmText)}</button>
+            <button class="btn ${danger ? 'btn-danger' : 'btn-brand'}" data-action="confirm-yes">${esc(confirmText)}</button>
           </div>
         </div>
       </div>`);
@@ -444,7 +477,7 @@ function openTaskModal(id) {
           <textarea class="textarea" id="f-desc" name="desc" placeholder="Add a little more detail…">${esc(t ? t.desc : '')}</textarea></div>
         <div class="modal-foot">
           <button type="button" class="btn btn-secondary" data-action="close-modal">Cancel</button>
-          <button type="button" class="btn btn-primary" data-action="save-task">${t ? 'Save changes' : 'Add task'}</button>
+          <button type="button" class="btn btn-brand" data-action="save-task">${t ? 'Save changes' : 'Add task'}</button>
         </div>
       </form>
     </div>`);
@@ -480,7 +513,7 @@ function openNewListModal() {
             <span class="field-hint">Creates a new <code>.md</code> file in the repository.</span></div>
           <div class="modal-foot">
             <button type="button" class="btn btn-secondary" data-action="close-modal">Cancel</button>
-            <button type="button" class="btn btn-primary" data-action="create-list">Create list</button>
+            <button type="button" class="btn btn-brand" data-action="create-list">Create list</button>
           </div>
         </div>
       </form>
@@ -554,30 +587,28 @@ function renderRepoPicker() {
 
   const body = state.repos.length
     ? `<div class="repo-list" id="repo-list">${cards}</div>`
-    : `<div class="empty-state"><div class="empty-icon">${icon('repo', 26)}</div><h3>No repositories found</h3><p>Your token may not have access to any repos. Check its scopes, or create one on GitHub.</p></div>`;
+    : `<div class="empty-state empty-lg"><div class="empty-icon">${icon('repo', 28)}</div><h3>No repositories found</h3><p>Your token may not have access to any repos. Check its scopes, or create one on GitHub.</p></div>`;
 
   app.innerHTML = `
     <div class="app-shell">
-      <header class="topbar">
-        <div class="topbar-left"><div class="brand">${icon('checkSquare', 22)} <span class="brand-name">Git<span>Tasks</span></span></div></div>
-        <div class="topbar-right">
-          <span class="user-chip">${state.user?.avatar ? `<img src="${esc(state.user.avatar)}" alt="">` : ''}<span>${esc(state.user?.login || '')}</span></span>
-          <span class="topbar-divider"></span>
-          <button class="icon-btn" data-action="theme" title="Toggle theme">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 18)}</button>
-          <button class="icon-btn" data-action="logout" title="Sign out">${icon('logout', 18)}</button>
-        </div>
-      </header>
-      <main class="repo-page">
-        <div class="repo-page-head">
+      ${headerMarkup({ tools: `${themeTool()}${toolBtn('logout', 'logout', 'Sign out', 'is-danger')}` })}
+      <main class="page">
+        <div class="page-head">
+          <span class="eyebrow">${icon('repo', 12)} Workspace</span>
           <h1>Choose a repository</h1>
-          <p class="muted">Select the repo where your Markdown todo lists live.</p>
-          <div class="search-wrap">
-            ${icon('search', 18)}
-            <input class="input" id="repo-search" type="search" placeholder="Search repositories by name…" autocomplete="off" value="${esc(state.repoFilter)}">
-            <span class="search-count" id="repo-count">${state.repos.length} repo${state.repos.length === 1 ? '' : 's'}</span>
-          </div>
+          <p class="lead">Select the repository where your Markdown lists live. GitTasks reads and writes <code>.md</code> files directly through the GitHub API.</p>
         </div>
-        ${body}
+        <div class="panel">
+          <div class="panel-head">
+            <div class="search-wrap">
+              ${icon('search', 18)}
+              <input class="input" id="repo-search" type="search" placeholder="Search repositories by name…" autocomplete="off" value="${esc(state.repoFilter)}">
+              <span class="search-count" id="repo-count">${state.repos.length} repo${state.repos.length === 1 ? '' : 's'}</span>
+            </div>
+            <span class="panel-hint">${state.repos.length} available</span>
+          </div>
+          <div class="panel-body">${body}</div>
+        </div>
       </main>
     </div>`;
   filterRepos(state.repoFilter);
@@ -623,24 +654,24 @@ function renderBoard() {
   if (!list) {
     app.innerHTML = `
       <div class="app-shell board-shell">
-        <header class="topbar">
-          <div class="topbar-left"><div class="brand">${icon('checkSquare', 22)} <span class="brand-name">Git<span>Tasks</span></span></div><span class="crumb"><span class="sep">/</span><strong>${esc(state.repo.full_name)}</strong></span></div>
-          <div class="topbar-right">
-            <span class="user-chip">${state.user?.avatar ? `<img src="${esc(state.user.avatar)}" alt="">` : ''}<span>${esc(state.user?.login || '')}</span></span>
-            <button class="icon-btn" data-action="sync" title="Sync with GitHub">${icon('refresh', 18)}</button>
-            <button class="icon-btn" data-action="theme" title="Toggle theme">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 18)}</button>
-            <button class="icon-btn" data-action="back-repos" title="Change repository">${icon('chevronLeft', 18)}</button>
-            <button class="icon-btn" data-action="logout" title="Sign out">${icon('logout', 18)}</button>
-          </div>
-        </header>
+        ${headerMarkup({
+          crumb: `<span class="crumb-slash">/</span><span class="crumb-repo">${esc(state.repo.full_name)}</span>`,
+          tools: `${toolBtn('sync', 'refresh', 'Sync with GitHub')}${themeTool()}${toolBtn('back-repos', 'chevronLeft', 'Change repository')}${toolBtn('logout', 'logout', 'Sign out', 'is-danger')}`,
+        })}
         <div class="board-body">
-          <aside class="sidebar"><div class="sidebar-head"><span>Lists</span><button class="icon-btn sm" data-action="new-list" title="New list">${icon('plus', 17)}</button></div><nav class="list-nav"></nav></aside>
+          <aside class="sidebar">
+            <div class="sidebar-head"><span class="sidebar-label">Your lists</span><button class="add-list-btn" data-action="new-list">${icon('plus', 15)} New list</button></div>
+            <nav class="list-nav"></nav>
+            <div class="sidebar-foot"><span>0 lists</span><span>v${APP_VERSION}</span></div>
+          </aside>
           <main class="board-main">
-            <div class="empty-state" style="max-width:520px">
-              <div class="empty-icon">${icon('list', 26)}</div>
-              <h3>No lists in this repository</h3>
-              <p>Add a <code>.md</code> file to the repo, or create one here to start tracking tasks.</p>
-              <button class="btn btn-primary" style="margin-top:18px" data-action="new-list">${icon('plus', 16)} Create a list</button>
+            <div class="board-inner">
+              <div class="empty-state empty-lg" style="max-width:560px;margin:0 auto">
+                <div class="empty-icon">${icon('list', 28)}</div>
+                <h3>No lists in this repository</h3>
+                <p>Add a <code>.md</code> file to the repo, or create one here to start tracking tasks.</p>
+                <button class="btn btn-brand" style="margin-top:20px" data-action="new-list">${icon('plus', 16)} Create a list</button>
+              </div>
             </div>
           </main>
         </div>
@@ -649,6 +680,10 @@ function renderBoard() {
   }
   const open = list.doc.tasks.filter((t) => !t.completed);
   const done = list.doc.tasks.filter((t) => t.completed);
+  const attention = open.filter((t) => {
+    const d = dueInfo(t.due);
+    return d && (d.cls === 'overdue' || d.cls === 'today' || d.cls === 'soon');
+  }).length;
 
   const listItems = state.lists.map((l) => {
     const count = l.doc.tasks.filter((t) => !t.completed).length;
@@ -668,45 +703,43 @@ function renderBoard() {
 
   app.innerHTML = `
     <div class="app-shell board-shell">
-      <header class="topbar">
-        <div class="topbar-left">
-          <div class="brand">${icon('checkSquare', 22)} <span class="brand-name">Git<span>Tasks</span></span></div>
-          <span class="crumb"><span class="sep">/</span><strong>${esc(state.repo.full_name)}</strong></span>
-        </div>
-        <div class="topbar-right">
-          <button class="icon-btn" data-action="sync" title="Sync with GitHub">${icon('refresh', 18)}</button>
-          <span class="user-chip">${state.user?.avatar ? `<img src="${esc(state.user.avatar)}" alt="">` : ''}<span>${esc(state.user?.login || '')}</span></span>
-          <span class="topbar-divider"></span>
-          <button class="icon-btn" data-action="theme" title="Toggle theme">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 18)}</button>
-          <button class="icon-btn" data-action="back-repos" title="Change repository">${icon('chevronLeft', 18)}</button>
-          <button class="icon-btn" data-action="logout" title="Sign out">${icon('logout', 18)}</button>
-        </div>
-      </header>
+      ${headerMarkup({
+        crumb: `<span class="crumb-slash">/</span><span class="crumb-repo">${esc(state.repo.full_name)}</span>`,
+        tools: `${toolBtn('sync', 'refresh', 'Sync with GitHub')}${themeTool()}${toolBtn('back-repos', 'chevronLeft', 'Change repository')}${toolBtn('logout', 'logout', 'Sign out', 'is-danger')}`,
+      })}
       <div class="board-body">
         <aside class="sidebar">
-          <div class="sidebar-head"><span>Lists</span><button class="icon-btn sm" data-action="new-list" title="New list">${icon('plus', 17)}</button></div>
+          <div class="sidebar-head"><span class="sidebar-label">Your lists</span><button class="add-list-btn" data-action="new-list">${icon('plus', 15)} New list</button></div>
           <nav class="list-nav">${listItems}</nav>
-          <div class="sidebar-foot">${state.lists.length} list${state.lists.length === 1 ? '' : 's'} in this repository · v${APP_VERSION}</div>
+          <div class="sidebar-foot"><span><span class="status-dot"></span>${state.lists.length} list${state.lists.length === 1 ? '' : 's'}</span><span>v${APP_VERSION}</span></div>
         </aside>
         <main class="board-main">
-          ${state.error ? `<div class="error-box" style="margin-bottom:22px">${icon('alert', 16)} <span style="flex:1">${esc(state.error)}</span><button class="icon-btn sm" data-action="dismiss-error" aria-label="Dismiss">${icon('x', 14)}</button></div>` : ''}
-          <div class="list-header">
-            <div>
-              <h1>${esc(list.name)}</h1>
-              <div class="subtitle">${open.length} open · ${done.length} completed &nbsp;·&nbsp; <code>${esc(list.path)}</code></div>
+          <div class="board-inner">
+            ${state.error ? `<div class="error-box" style="margin-bottom:22px">${icon('alert', 16)} <span style="flex:1">${esc(state.error)}</span><button class="icon-btn sm" data-action="dismiss-error" aria-label="Dismiss">${icon('x', 14)}</button></div>` : ''}
+            <div class="board-head">
+              <div>
+                <span class="eyebrow">${icon('repo', 12)} ${esc(state.repo.name)}</span>
+                <h1>${esc(list.name)}</h1>
+                <div class="subtitle">${open.length} open · ${done.length} completed &nbsp;·&nbsp; <code>${esc(list.path)}</code></div>
+              </div>
+              <button class="btn btn-brand" data-action="add-task">${icon('plus', 16)} Add task</button>
             </div>
-            <div class="header-actions"><button class="btn btn-primary" data-action="add-task">${icon('plus', 16)} Add task</button></div>
+            <div class="stats-row">
+              <div class="stat"><span class="stat-label">Open tasks</span><span class="stat-value">${open.length}</span></div>
+              <div class="stat"><span class="stat-label">Completed</span><span class="stat-value">${done.length}</span></div>
+              <div class="stat"><span class="stat-label">Due soon</span><span class="stat-value">${attention}</span></div>
+            </div>
+            <section class="task-section">
+              <h2 class="section-title"><span class="section-icon">${icon('list', 15)}</span> Todo <span class="count">${open.length}</span></h2>
+              <div class="task-list">${openHTML}</div>
+            </section>
+            <section class="task-section completed-section">
+              <h2 class="section-title"><span class="section-icon">${icon('check', 15)}</span> Completed <span class="count">${done.length}</span>
+                ${done.length ? `<button class="icon-btn sm section-toggle" data-action="toggle-completed" title="${state.completedCollapsed ? 'Show' : 'Hide'} completed">${icon(state.completedCollapsed ? 'chevronDown' : 'chevronLeft', 15)}</button>` : ''}
+              </h2>
+              ${state.completedCollapsed ? '' : `<div class="task-list">${doneHTML}</div>`}
+            </section>
           </div>
-          <section class="task-section">
-            <h2 class="section-title">Todo <span class="count">${open.length}</span></h2>
-            <div class="task-list">${openHTML}</div>
-          </section>
-          <section class="task-section completed-section">
-            <h2 class="section-title">Completed <span class="count">${done.length}</span>
-              ${done.length ? `<button class="icon-btn sm section-toggle" data-action="toggle-completed" title="${state.completedCollapsed ? 'Show' : 'Hide'} completed">${icon(state.completedCollapsed ? 'chevronDown' : 'chevronLeft', 15)}</button>` : ''}
-            </h2>
-            ${state.completedCollapsed ? '' : `<div class="task-list">${doneHTML}</div>`}
-          </section>
         </main>
       </div>
     </div>`;

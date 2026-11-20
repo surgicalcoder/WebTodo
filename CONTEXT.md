@@ -40,7 +40,7 @@ Files in `D:\Work\_WIP_\todo`:
 
 **Stack:** vanilla ES modules, no build step, no dependencies. Static files only.
 
-**Current build marker:** `APP_VERSION = '6'`, shown in sidebar footer as `v6`.
+**Current build marker:** `APP_VERSION = '7'`, shown in sidebar footer as `v7`.
 Use this to confirm a browser actually loaded the latest `app.js`.
 
 ---
