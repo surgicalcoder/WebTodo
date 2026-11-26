@@ -2,6 +2,16 @@
 
 A fully client-side todo application that stores each list as a Markdown (`.md`) file in a GitHub repository you choose. There is **no backend** — the browser talks directly to the GitHub REST API using a Personal Access Token (PAT).
 
+## Screenshots
+
+Click a thumbnail to open the full-size image.
+
+| Task board | Repository picker |
+|:---:|:---:|
+| [![Task board](_screenshots/03-board-light_thumb.png)](_screenshots/03-board-light.png) | [![Repository picker](_screenshots/02-repositories-light_thumb.png)](_screenshots/02-repositories-light.png) |
+
+More views (dark theme, modal, mobile, empty states) are in [`_screenshots/`](_screenshots/).
+
 ## Features
 
 - **PAT login** — enter a token, then pick from every repository it can access.
